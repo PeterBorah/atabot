@@ -3,9 +3,11 @@ from sys import argv
 
 def initialize_board(x, y):
     board = {}
+    board["x_size"] = x
+    board["y_size"] = y
     for i in range(x):
         for j in range(y):
-            board[str(i)+str(j)] = False
+            board["x"+str(i)+"y"+str(j)] = False
     return board
 
 def board_create(rows, x_param, board):
@@ -18,7 +20,7 @@ def board_create(rows, x_param, board):
             if char == "b":
                 column_num += 1
             elif char == "o":
-                board[str(column_num) + str(row_num)] = True
+                board["x" + str(column_num) + "y" + str(row_num)] = True
                 column_num += 1
             elif char == "$":
                 column_num = 0
@@ -34,7 +36,7 @@ def board_create(rows, x_param, board):
                     column_num += repeat_num
                 elif next == "o":
                     for i in range(repeat_num):
-                        board[str(column_num) + str(row_num)] = True
+                        board["x" + str(column_num) + "y" + str(row_num)] = True
                         column_num += 1
                 elif next == "$":
                    row_num += repeat_num - 1
