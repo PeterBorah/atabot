@@ -26,7 +26,7 @@ def board_create(rows, x_param, board):
                 column_num = 0
                 break
             elif char == "!":
-                return board
+                break
             else:
                 repeat = re.match('\d+', row[char_num:])
                 repeat_num = int(repeat.group())
@@ -48,16 +48,18 @@ def board_create(rows, x_param, board):
         row_num += 1
     return board
 
-def open_rle(file):
+def interpret_rle(file):
     rle = open(file)
     rows = []
     try:
         for line in rle:
             if line[0] == 'x':
-                x_param = re.search('x\s*=\s*(\d)*', line)
-                x_param = int(x_param.group(1))
-                y_param = re.search('y\s*=\s*(\d)*', line)
-                y_param = int(y_param.group(1))
+                x_begin = re.search('x\s*=\s*', line)
+                x_end = line.find("," , x_begin.end())
+                x_size = int(line[x_begin.end():x_end])
+                y_begin = re.search('y\s*=\s*', line)
+                y_end = line.find("," , y_begin.end())
+                y_size = int(line[y_begin.end():y_end])
 
             elif line[0] == '#':
                 pass
@@ -69,10 +71,10 @@ def open_rle(file):
                     row = row.group()
                     rows.append(row)
         
-        board = initialize_board(x_param, y_param)
-        return board_create(rows, x_param, board)
+        board = initialize_board(x_size, y_size)
+        return board_create(rows, x_size, board)
                     
     except:
         print "Bad RLE file, or bad RLE interpreter."
-        
-print open_rle(argv[1])
+
+print interpret_rle(argv[1])
