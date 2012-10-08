@@ -1,4 +1,4 @@
 atabot
 ======
 
-An ataviser for Conway's Game of Life, focusing on speed and depth over breadth.
+An ataviser for Conway's Game of Life, focusing on speed and depth rather tan breadth.
