@@ -1,58 +1,61 @@
 import re
 from sys import argv
 
-def initialize_board(x, y):
+def create_blank(x, y):
     board = {}
     board["x_size"] = x
     board["y_size"] = y
-    for i in range(x):
-        for j in range(y):
-            board["x"+str(i)+"y"+str(j)] = False
+    for j in range(y):
+        board[j] = {}
+        for i in range(x):
+            board[j][i] = False
+            
     return board
 
-def board_create(rows, x_param, board):
-    row_num = 0
-    for row in rows:
-        column_num = 0
+def interpret_rle(rle, board):
+    try:
+        row_num = 1
+        column_num = 1
         char_num = 0
-        while char_num < len(row):
-            char = row[char_num]
+        while char_num < len(rle):
+            char = rle[char_num]
             if char == "b":
                 column_num += 1
             elif char == "o":
-                board["x" + str(column_num) + "y" + str(row_num)] = True
+                board[row_num][column_num] = True
                 column_num += 1
             elif char == "$":
-                column_num = 0
-                break
+                column_num = 1
+                row_num += 1
             elif char == "!":
                 break
             else:
-                repeat = re.match('\d+', row[char_num:])
+                repeat = re.match('\d+', rle[char_num:])
                 repeat_num = int(repeat.group())
-                next = row[repeat.end() + char_num]
+                next = rle[repeat.end() + char_num]
                 char_num += repeat.end()
+                
                 if next == "b":
                     column_num += repeat_num
                 elif next == "o":
                     for i in range(repeat_num):
-                        board["x" + str(column_num) + "y" + str(row_num)] = True
+                        board[row_num][column_num] = True
                         column_num += 1
                 elif next == "$":
-                   row_num += repeat_num - 1
-                   column_num = 0
-                   break
+                   row_num += repeat_num
+                   column_num = 1
                    
-            char_num += 1        
-                
-        row_num += 1
+                   
+            char_num += 1
+    except:
+        print "Bad RLE file, or bad RLE interpreter."
     return board
 
-def interpret_rle(file):
-    rle = open(file)
-    rows = []
+def open_rle(file):
+    f = open(file)
+    rle = ""
     try:
-        for line in rle:
+        for line in f:
             if line[0] == 'x':
                 x_begin = re.search('x\s*=\s*', line)
                 x_end = line.find("," , x_begin.end())
@@ -65,16 +68,32 @@ def interpret_rle(file):
                 pass
             
             else:
-                while line:
-                    row = re.match('[^$!]+[$!]', line)
-                    line = line[row.end():]
-                    row = row.group()
-                    rows.append(row)
+                rle += line[:-1]
         
-        board = initialize_board(x_size, y_size)
-        return board_create(rows, x_size, board)
+        board = create_blank(x_size + 2, y_size + 2)
+        return interpret_rle(rle, board)
                     
     except:
-        print "Bad RLE file, or bad RLE interpreter."
-
-print interpret_rle(argv[1])
+        print "Bad RLE file, or bad RLE opener."
+        
+def print_board(board):
+    for j in range(board["y_size"]):
+        row_result = ""
+        for i in range(board["x_size"]):
+            if board[j][i] == True:
+                row_result += "X"
+            else:
+                row_result += "O"
+        print row_result
+        
+def export(board):
+    rle = "x = %d, y = %d\n" % (board["x_size"], board["y_size"])
+    for j in range(board["y_size"]):
+        for i in range(board["x_size"]):
+            if board[j][i] == True:
+                rle += "o"
+            else:
+                rle += "b"
+        rle += "$"
+    rle = rle[0:-1] + "!"
+    return rle
