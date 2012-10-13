@@ -1,14 +1,8 @@
 import random
-from sys import argv
 
-import open
+import tools
 
 class Game(object):
-    def __init__(self, board):
-        self.board = board
-        self.candidate = open.create_blank(board["x_size"], board["y_size"])
-        self.needy = self.initialize_neediness()
-        self.impact = self.initialize_impact()
         
     def get_neighborhood(self, cell):
         x = cell[0]
@@ -91,27 +85,25 @@ class Game(object):
         return total
     
     def initialize_neediness(self):
-        needy = {}
+        self.needy = {}
         x = self.board["x_size"]
         y = self.board["y_size"] 
         self.total_needy = 0
         for j in range(y):
-            needy[j] = {}
+            self.needy[j] = {}
             for i in range(x):
                 score = self.get_neediness((i,j))
-                needy[j][i] = score
+                self.needy[j][i] = score
                 self.total_needy += score
-        return needy
         
     def initialize_impact(self):
-        impact = {}
+        self.impact = {}
         x = self.board["x_size"]
         y = self.board["y_size"] 
         for j in range(y):
-            impact[j] = {}
+            self.impact[j] = {}
             for i in range(x):
-                impact[j][i] = self.get_impact((i,j))
-        return impact
+                self.impact[j][i] = self.get_impact((i,j))
         
     def get_big_neighborhood(self, cell): #inelegant as beans
         small = self.get_neighborhood(cell)
@@ -134,11 +126,24 @@ class Game(object):
         neighborhood = self.get_neighborhood(cell)
         for neighbor in neighborhood:
             self.needy[neighbor[1]][neighbor[0]] = self.get_neediness(neighbor)
-            
-    def use_jhc(self, chance = 3):
-        '''Jittery Hill-Climbing algorithm'''
         
-        if random.choice(range(chance)) == 0:
+class Hillclimber(Game):
+    def __init__(self, board, random=False):
+        self.board = board
+        if random:
+            self.candidate = tools.create_random(board["x_size"], 
+                                                 board["y_size"])
+        else:
+            self.candidate = tools.create_blank(board["x_size"], 
+                                                board["y_size"])
+        
+        self.initialize_neediness()
+        self.initialize_impact()
+        
+    def use_sahc(self, chance=3, jittery=True):
+        '''Steepest Ascent Hill-Climbing algorithm'''
+        
+        if jittery and random.choice(range(chance)) == 0:
             flip_cell = (random.choice(range(self.board["x_size"])),
                         random.choice(range(self.board["y_size"])))
         else:
@@ -153,6 +158,8 @@ class Game(object):
                     elif score == best_score:
                         best_list.append((i, j))
             flip_cell = random.choice(best_list)
+            if not jittery and best_score <= 0:
+                return False
             
         x = flip_cell[0]
         y = flip_cell[1]
@@ -160,13 +167,32 @@ class Game(object):
         self.total_needy -= self.impact[y][x]
         self.update_neediness(flip_cell)
         self.update_impact(flip_cell)
-
-board = open.open_rle(argv[1])        
-test = Game(board)
-i = 0
-while test.total_needy > 0:
-    test.use_jhc()
-    print test.total_needy
-    i += 1
-print open.export(test.candidate)
-print i
+        return True
+        
+    def use_hc(self, chance=3, jittery=True):
+        '''Simple Hill-Climbing algorithm'''
+        
+        flip_cell = None
+        if not jittery or random.choice(range(chance)) != 0:
+            for j in range(self.board["y_size"]):
+                if flip_cell:
+                    break
+                    
+                for i in range(self.board["x_size"]):
+                    if self.impact[j][i] > 0:
+                        flip_cell = (i, j)
+                        break 
+                        
+        if not flip_cell:
+            if not jittery:
+                return False
+            flip_cell = (random.choice(range(self.board["x_size"])),
+                        random.choice(range(self.board["y_size"])))
+        
+        x = flip_cell[0]
+        y = flip_cell[1]
+        self.candidate[y][x] = not self.candidate[y][x]
+        self.total_needy -= self.impact[y][x]
+        self.update_neediness(flip_cell)
+        self.update_impact(flip_cell)
+        return True 
