@@ -41,10 +41,10 @@ def repeated_steep(game_obj):
     
 def compare_hillclimbers(file, iterations):
     board = tools.open_rle(file)
-    #res = time_it(board, jittery_steep, iterations, True)
-    #print "Jittery Steep: %s" % res
-    #res = time_it(board, jittery_simple, iterations, True)
-    #print "Jittery Simple: %s" % res
+    res = time_it(board, jittery_steep, iterations, True)
+    print "Jittery Steep: %s" % res
+    res = time_it(board, jittery_simple, iterations, True)
+    print "Jittery Simple: %s" % res
     res = time_it(board, repeated_steep, iterations, False)
     print "Repeated Steep: %s" % res
     res = time_it(board, repeated_simple, iterations, False)
