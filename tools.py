@@ -1,5 +1,5 @@
 import re
-from sys import argv
+import random
 
 def create_blank(x, y):
     board = {}
@@ -11,6 +11,18 @@ def create_blank(x, y):
             board[j][i] = False
             
     return board
+    
+def create_random(x, y):
+    board = {}
+    board["x_size"] = x
+    board["y_size"] = y
+    for j in range(y):
+        board[j] = {}
+        for i in range(x):
+            board[j][i] = random.choice([True, False])
+            
+    return board
+    
 
 def interpret_rle(rle, board):
     try:
@@ -88,7 +100,13 @@ def print_board(board):
         
 def export(board):
     rle = "x = %d, y = %d\n" % (board["x_size"], board["y_size"])
+    max_rows = 70 // board["x_size"]
+    current_row = 0
     for j in range(board["y_size"]):
+        current_row += 1
+        if current_row > max_rows:
+            rle += "\n"
+            current_row = 0
         for i in range(board["x_size"]):
             if board[j][i] == True:
                 rle += "o"
