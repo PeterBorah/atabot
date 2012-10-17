@@ -196,3 +196,81 @@ class Hillclimber(Game):
         self.update_neediness(flip_cell)
         self.update_impact(flip_cell)
         return True 
+        
+        
+    def use_test_algo(self, volatility = 5):
+        
+        best_score = 1
+        best_list = []
+        for j in range(self.board["y_size"]):
+            for i in range(self.board["x_size"]):
+                score = self.impact[j][i]
+                if score > best_score:
+                    best_score = score
+                    best_list = [(i, j)]
+                elif score == best_score:
+                    best_list.append((i, j))
+
+        
+        if not best_list:
+            for i in range(volatility):
+                flip_cell = (random.choice(range(self.board["x_size"])),
+                            random.choice(range(self.board["y_size"])))
+                x = flip_cell[0]
+                y = flip_cell[1]
+                self.candidate[y][x] = not self.candidate[y][x]
+                self.total_needy -= self.impact[y][x]
+                self.update_neediness(flip_cell)
+                self.update_impact(flip_cell)
+        else:        
+            flip_cell = random.choice(best_list)
+            x = flip_cell[0]
+            y = flip_cell[1]
+            self.candidate[y][x] = not self.candidate[y][x]
+            self.total_needy -= self.impact[y][x]
+            self.update_neediness(flip_cell)
+            self.update_impact(flip_cell)
+
+    def use_combo(self, volatility = 5, chance = 3):
+        
+        if random.choice(range(chance)) == 0:
+            flip_cell = (random.choice(range(self.board["x_size"])),
+                        random.choice(range(self.board["y_size"])))
+            x = flip_cell[0]
+            y = flip_cell[1]
+            self.candidate[y][x] = not self.candidate[y][x]
+            self.total_needy -= self.impact[y][x]
+            self.update_neediness(flip_cell)
+            self.update_impact(flip_cell)
+        else:
+        
+            best_score = 1
+            best_list = []
+            for j in range(self.board["y_size"]):
+                for i in range(self.board["x_size"]):
+                    score = self.impact[j][i]
+                    if score > best_score:
+                        best_score = score
+                        best_list = [(i, j)]
+                    elif score == best_score:
+                        best_list.append((i, j))
+
+            
+            if not best_list:
+                for i in range(volatility):
+                    flip_cell = (random.choice(range(self.board["x_size"])),
+                                random.choice(range(self.board["y_size"])))
+                    x = flip_cell[0]
+                    y = flip_cell[1]
+                    self.candidate[y][x] = not self.candidate[y][x]
+                    self.total_needy -= self.impact[y][x]
+                    self.update_neediness(flip_cell)
+                    self.update_impact(flip_cell)
+            else:        
+                flip_cell = random.choice(best_list)
+                x = flip_cell[0]
+                y = flip_cell[1]
+                self.candidate[y][x] = not self.candidate[y][x]
+                self.total_needy -= self.impact[y][x]
+                self.update_neediness(flip_cell)
+                self.update_impact(flip_cell)
