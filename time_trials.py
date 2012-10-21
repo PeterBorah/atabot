@@ -226,19 +226,20 @@ def compare_combos(x, y, iterations):
     print "Combo 4 3: %s, %s, %s, %s" % (avg, min, max, failed)
     steps, avg, min, max, failed = time_it(x, y, combo, iterations, 4, 4)
     print "Combo 4 4: %s, %s, %s, %s" % (avg, min, max, failed)
-    
-if __name__ == '__main__':
-    x, y, iterations = int(argv[1]), int(argv[2]), int(argv[3])
-    steps, avg, min, max, failed = time_it(x, y, breakout_bail, iterations)    
+ 
+def compare_bail(x, y, iterations, timeout=1): 
+    print "%sx%s, %s iterations, %sm timeout" % (x, y, iterations, timeout)
+    steps, avg, min, max, failed = time_it(x, y, breakout_bail, iterations, timeout)    
     print "brkout bl: %s, %s, %s, %s, %s" % (avg, min, max, failed, steps)
     steps, avg, min, max, failed = time_it(x, y, pogo, iterations)
     print "pogo     : %s, %s, %s, %s, %s" % (avg, min, max, failed, steps)
-    steps, avg, min, max, failed = time_it(x, y, pogo_bail, iterations)
+    steps, avg, min, max, failed = time_it(x, y, pogo_bail, iterations, timeout)
     print "bail pogo: %s, %s, %s, %s, %s" % (avg, min, max, failed, steps)
-    steps, avg, min, max, failed = time_it(x, y, jittery_steep, iterations, 3)
+    steps, avg, min, max, failed = time_it(x, y, jittery_steep, iterations, 3, timeout)
     print "steep   3: %s, %s, %s, %s, %s" % (avg, min, max, failed, steps)
-    steps, avg, min, max, failed = time_it(x, y, steep_bail, iterations, 3)
+    steps, avg, min, max, failed = time_it(x, y, steep_bail, iterations, 3, timeout)
     print "bail stp3: %s, %s, %s, %s, %s" % (avg, min, max, failed, steps)
-    #steps, avg, min, max, failed = time_it(x, y, pogo, iterations)
-    #print "Pogo     : %s, %s, %s, %s, %s" % (avg, min, max, failed, steps)
-    #compare_test_algos(x, y, iterations)
+    
+if __name__ == '__main__':
+    compare_bail(5, 5, 1000)
+    
