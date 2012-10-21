@@ -139,6 +139,7 @@ class Hillclimber(Game):
         
         self.initialize_neediness()
         self.initialize_impact()
+        self.minima = {}
         
     def use_sahc(self, chance=3, jittery=True):
         '''Steepest Ascent Hill-Climbing algorithm'''
@@ -230,6 +231,46 @@ class Hillclimber(Game):
             self.total_needy -= self.impact[y][x]
             self.update_neediness(flip_cell)
             self.update_impact(flip_cell)
+            
+            
+            
+    def use_pogo(self):
+        
+        best_score = 1
+        best_list = []
+        for j in range(self.board["y_size"]):
+            for i in range(self.board["x_size"]):
+                score = self.impact[j][i]
+                if score > best_score:
+                    best_score = score
+                    best_list = [(i, j)]
+                elif score == best_score:
+                    best_list.append((i, j))
+
+        
+        if not best_list:
+            current = tools.export(self.candidate)
+            if current in self.minima:
+                self.minima[current] += 1
+            else:
+                self.minima[current] = 1
+            for i in range(self.minima[current]):
+                flip_cell = (random.choice(range(self.board["x_size"])),
+                            random.choice(range(self.board["y_size"])))
+                x = flip_cell[0]
+                y = flip_cell[1]
+                self.candidate[y][x] = not self.candidate[y][x]
+                self.total_needy -= self.impact[y][x]
+                self.update_neediness(flip_cell)
+                self.update_impact(flip_cell)
+        else:        
+            flip_cell = random.choice(best_list)
+            x = flip_cell[0]
+            y = flip_cell[1]
+            self.candidate[y][x] = not self.candidate[y][x]
+            self.total_needy -= self.impact[y][x]
+            self.update_neediness(flip_cell)
+            self.update_impact(flip_cell)
 
     def use_combo(self, volatility = 5, chance = 3):
         
@@ -274,3 +315,68 @@ class Hillclimber(Game):
                 self.total_needy -= self.impact[y][x]
                 self.update_neediness(flip_cell)
                 self.update_impact(flip_cell)
+                
+class Breakout(Game):
+    def __init__(self, board, random=False):
+        self.board = board
+        if random:
+            self.candidate = tools.create_random(board["x_size"], 
+                                                 board["y_size"])
+        else:
+            self.candidate = tools.create_blank(board["x_size"], 
+                                                board["y_size"])
+        
+        self.initialize_neediness()
+        self.initialize_weighting()
+        self.initialize_impact()
+        
+    def initialize_weighting(self):
+        self.weight = {}
+        x = self.board["x_size"]
+        y = self.board["y_size"]
+        for j in range(y):
+            self.weight[j] = {}
+            for i in range(x):
+                self.weight[j][i] = 1
+                
+        return self.weight
+        
+    def get_impact(self, cell):
+        neighborhood = self.get_neighborhood(cell)
+        total = 0
+        for neighbor in neighborhood:
+            new = self.get_neediness(neighbor, cell)
+            change = ((self.needy[neighbor[1]][neighbor[0]] - new) 
+                        * self.weight[neighbor[1]][neighbor[0]])
+            total += change
+        return total
+    
+    def use_breakout(self):
+        best_score = 1
+        best_list = []
+        for j in range(self.board["y_size"]):
+            for i in range(self.board["x_size"]):
+                score = self.impact[j][i]
+                if score > best_score:
+                    best_score = score
+                    best_list = [(i, j)]
+                elif score == best_score:
+                    best_list.append((i, j))
+
+        
+        if not best_list:
+            for j in range(self.board["y_size"]):
+                for i in range(self.board["x_size"]):
+                    if self.needy[j][i] != 0:
+                        self.weight[j][i] += 1
+            self.initialize_impact()
+            
+        else:        
+            flip_cell = random.choice(best_list)
+            x = flip_cell[0]
+            y = flip_cell[1]
+            self.candidate[y][x] = not self.candidate[y][x]
+            self.initialize_neediness()
+            self.update_impact(flip_cell)
+
+    

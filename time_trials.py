@@ -20,38 +20,144 @@ def random_pattern(x, y):
             
     return board
 
-def time_it(x, y, algorithm, iterations, a, b = None):
+def time_it(x, y, algorithm, iterations, a = None, b = None):
     max_time = datetime.timedelta(0)
     min_time = datetime.timedelta(days = 1)
     total_time = datetime.timedelta(0)
+    total_steps = 0
+    failed = 0
     for i in range(iterations):
         board = random_pattern(x, y)
         start = datetime.datetime.now()
-        game_obj = game.Hillclimber(board)
-        if b: algorithm(game_obj, a, b)
-        else: algorithm(game_obj, a)
-        time = (datetime.datetime.now()-start)
-        if time > max_time: max_time = time
-        if time < min_time: min_time = time
-        total_time += time
-    return total_time/iterations, min_time, max_time
+        if algorithm == breakout or algorithm == breakout_bail:
+            game_obj = game.Breakout(board)
+        else:
+            game_obj = game.Hillclimber(board)
+        if b: 
+            res = algorithm(game_obj, a, b)
+        elif a: 
+            res = algorithm(game_obj, a)
+        else:
+            res = algorithm(game_obj)
+        if res:
+            time = (datetime.datetime.now()-start)
+            if time > max_time: max_time = time
+            if time < min_time: min_time = time
+            total_time += time
+            total_steps += res
+        else: 
+            failed += 1
+    return total_steps/(iterations - failed), total_time/(iterations - failed), min_time, max_time, failed
     
 def jittery_simple(game_obj):
     while game_obj.total_needy > 0:
         game_obj.use_hc()
         
-def jittery_steep(game_obj, n):
+def jittery_steep(game_obj, n, timeout=1):
+    start = datetime.datetime.now()
+    i = 0
     while game_obj.total_needy > 0:
+        i += 1
+        time = datetime.datetime.now() - start
+        if time > datetime.timedelta(minutes = timeout):
+            return False
         game_obj.use_sahc(n)
-        
-def test_algo(game_obj, n):
+    return i
+    
+def steep_bail(game_obj, n, timeout=1):
+    start = datetime.datetime.now()
+    step_start = start
+    i = 0
     while game_obj.total_needy > 0:
+        i += 1
+        time = datetime.datetime.now() - start
+        if time > datetime.timedelta(minutes = timeout):
+            return False
+        step_time = datetime.datetime.now() - step_start
+        if step_time > datetime.timedelta(seconds = 10):
+            board = game_obj.board
+            game_obj = game.Hillclimber(board, random=True)
+            step_start = datetime.datetime.now()
+        game_obj.use_sahc(n)
+    return i
+    
+def test_algo(game_obj, n, timeout = 1):
+    start = datetime.datetime.now()
+    i = 0
+    while game_obj.total_needy > 0:
+        i += 1
+        time = datetime.datetime.now() - start
+        if time > datetime.timedelta(minutes = timeout):
+            return False
         game_obj.use_test_algo(n)
-        
-def combo(game_obj, a, b):
+    return i
+    
+def pogo(game_obj, timeout = 1):
+    start = datetime.datetime.now()
+    i = 0
+    step_start = start
     while game_obj.total_needy > 0:
+        i += 1
+        time = datetime.datetime.now() - start
+        if time > datetime.timedelta(minutes = timeout):
+            return False
+        game_obj.use_pogo()
+    return i
+    
+def pogo_bail(game_obj, timeout = 1):
+    start = datetime.datetime.now()
+    i = 0
+    step_start = start
+    while game_obj.total_needy > 0:
+        i += 1
+        time = datetime.datetime.now() - start
+        if time > datetime.timedelta(minutes = timeout):
+            return False
+        step_time = datetime.datetime.now() - step_start
+        if step_time > datetime.timedelta(seconds = 10):
+            board = game_obj.board
+            game_obj = game.Hillclimber(board, random=True)
+            step_start = datetime.datetime.now()
+        game_obj.use_pogo()
+    return i
+    
+def breakout_bail(game_obj, timeout=1):
+    start = datetime.datetime.now()
+    i = 0
+    step_start = start
+    while game_obj.total_needy > 0:
+        i += 1
+        time = datetime.datetime.now() - start
+        if time > datetime.timedelta(minutes = timeout):
+            return False
+        step_time = datetime.datetime.now() - step_start
+        if step_time > datetime.timedelta(seconds = 10):
+            board = game_obj.board
+            game_obj = game.Breakout(board, random=True)
+            step_start = datetime.datetime.now()
+        game_obj.use_breakout()
+    return i
+    
+def breakout(game_obj, timeout=1):
+    start = datetime.datetime.now()
+    i = 0
+    while game_obj.total_needy > 0:
+        i += 1
+        time = datetime.datetime.now() - start
+        if time > datetime.timedelta(minutes = timeout):
+            return False
+        game_obj.use_breakout()
+    return i
+    
+def combo(game_obj, a, b, timeout=1):
+    start = datetime.datetime.now()
+    while game_obj.total_needy > 0:
+        time = datetime.datetime.now() - start
+        if time > datetime.timedelta(minutes = timeout):
+            return False
         game_obj.use_combo(a, b)
-        
+    return True
+    
 def repeated_simple(game_obj):
     x = game_obj.board["x_size"]
     y = game_obj.board["y_size"]
@@ -83,57 +189,56 @@ def compare_hillclimbers(file, iterations):
     res = time_it(board, repeated_simple, iterations, False)
     print "Repeated Simple: %s" % res
     
-def compare_test_algos(x, y, iterations):
+def compare_test_algos(x, y, iterations, timeout = 30):
     x, y, iterations = int(x), int(y), int(iterations)
 
-    avg, min, max = time_it(x, y, jittery_steep, iterations, 2)
-    print "Steep   2: %s, %s, %s" % (avg, min, max)
-    avg, min, max = time_it(x, y, jittery_steep, iterations, 3)
-    print "Steep   3: %s, %s, %s" % (avg, min, max)
-    avg, min, max = time_it(x, y, jittery_steep, iterations, 4)
-    print "Steep   4: %s, %s, %s" % (avg, min, max)
-    avg, min, max = time_it(x, y, test_algo, iterations, 2)
-    print "Test    2: %s, %s, %s" % (avg, min, max)
-    avg, min, max = time_it(x, y, test_algo, iterations, 3)
-    print "Test    3: %s, %s, %s" % (avg, min, max)
-    avg, min, max = time_it(x, y, test_algo, iterations, 4)
-    print "Test    4: %s, %s, %s" % (avg, min, max)
+    steps, avg, min, max, failed = time_it(x, y, jittery_steep, iterations, 2)
+    print "Steep   2: %s, %s, %s, %s, %s" % (avg, min, max, failed, steps)
+    steps, avg, min, max, failed = time_it(x, y, jittery_steep, iterations, 3)
+    print "Steep   3: %s, %s, %s, %s, %s" % (avg, min, max, failed, steps)
+    steps, avg, min, max, failed = time_it(x, y, jittery_steep, iterations, 4)
+    print "Steep   4: %s, %s, %s, %s, %s" % (avg, min, max, failed, steps)
+    steps, avg, min, max, failed = time_it(x, y, test_algo, iterations, 2)
+    print "Test    2: %s, %s, %s, %s, %s" % (avg, min, max, failed, steps)
+    steps, avg, min, max, failed = time_it(x, y, test_algo, iterations, 3)
+    print "Test    3: %s, %s, %s, %s, %s" % (avg, min, max, failed, steps)
+    steps, avg, min, max, failed = time_it(x, y, test_algo, iterations, 4)
+    print "Test    4: %s, %s, %s, %s, %s" % (avg, min, max, failed, steps)
     
 def compare_combos(x, y, iterations):
     x, y, iterations = int(x), int(y), int(iterations)
     
-    avg, min, max = time_it(x, y, combo, iterations, 2, 2)
-    print "Combo 2 2: %s, %s, %s" % (avg, min, max)
-    avg, min, max = time_it(x, y, combo, iterations, 2, 3)
-    print "Combo 2 3: %s, %s, %s" % (avg, min, max)
-    avg, min, max = time_it(x, y, combo, iterations, 2, 4)
-    print "Combo 2 4: %s, %s, %s" % (avg, min, max)
-    avg, min, max = time_it(x, y, combo, iterations, 3, 2)
-    print "Combo 3 2: %s, %s, %s" % (avg, min, max)
-    avg, min, max = time_it(x, y, combo, iterations, 3, 3)
-    print "Combo 3 3: %s, %s, %s" % (avg, min, max)
-    avg, min, max = time_it(x, y, combo, iterations, 3, 4)
-    print "Combo 3 4: %s, %s, %s" % (avg, min, max)
-    avg, min, max = time_it(x, y, combo, iterations, 4, 2)
-    print "Combo 4 2: %s, %s, %s" % (avg, min, max)
-    avg, min, max = time_it(x, y, combo, iterations, 4, 3)
-    print "Combo 4 3: %s, %s, %s" % (avg, min, max)
-    avg, min, max = time_it(x, y, combo, iterations, 4, 4)
-    print "Combo 4 4: %s, %s, %s" % (avg, min, max)
+    steps, avg, min, max, failed = time_it(x, y, combo, iterations, 2, 2)
+    print "Combo 2 2: %s, %s, %s, %s" % (avg, min, max, failed)
+    steps, avg, min, max, failed = time_it(x, y, combo, iterations, 2, 3)
+    print "Combo 2 3: %s, %s, %s, %s" % (avg, min, max, failed)
+    steps, avg, min, max, failed = time_it(x, y, combo, iterations, 2, 4)
+    print "Combo 2 4: %s, %s, %s, %s" % (avg, min, max, failed)
+    steps, avg, min, max, failed = time_it(x, y, combo, iterations, 3, 2)
+    print "Combo 3 2: %s, %s, %s, %s" % (avg, min, max, failed)
+    steps, avg, min, max, failed = time_it(x, y, combo, iterations, 3, 3)
+    print "Combo 3 3: %s, %s, %s, %s" % (avg, min, max, failed)
+    steps, avg, min, max, failed = time_it(x, y, combo, iterations, 3, 4)
+    print "Combo 3 4: %s, %s, %s, %s" % (avg, min, max, failed)
+    steps, avg, min, max, failed = time_it(x, y, combo, iterations, 4, 2)
+    print "Combo 4 2: %s, %s, %s, %s" % (avg, min, max, failed)
+    steps, avg, min, max, failed = time_it(x, y, combo, iterations, 4, 3)
+    print "Combo 4 3: %s, %s, %s, %s" % (avg, min, max, failed)
+    steps, avg, min, max, failed = time_it(x, y, combo, iterations, 4, 4)
+    print "Combo 4 4: %s, %s, %s, %s" % (avg, min, max, failed)
     
 if __name__ == '__main__':
-    print "3x3, 1000 iterations"
-    compare_test_algos(3, 3, 1000)
-    compare_combos(3, 3, 1000)
-    print "4x4, 500 iterations"
-    compare_test_algos(4, 4, 500)
-    compare_combos(4, 4, 500)
-    print "5x5, 10 iterations"
-    compare_test_algos(5, 5, 10)
-    compare_combos(5, 5, 10)
-    print "8x8, 1 iteration"
-    compare_test_algos(8, 8, 1)
-    compare_combos(8, 8, 1)
-    print "11x11, 1 iteration"
-    compare_test_algos(11, 11, 1)
-    compare_combos(11, 11, 1)
+    x, y, iterations = int(argv[1]), int(argv[2]), int(argv[3])
+    steps, avg, min, max, failed = time_it(x, y, breakout_bail, iterations)    
+    print "brkout bl: %s, %s, %s, %s, %s" % (avg, min, max, failed, steps)
+    steps, avg, min, max, failed = time_it(x, y, pogo, iterations)
+    print "pogo     : %s, %s, %s, %s, %s" % (avg, min, max, failed, steps)
+    steps, avg, min, max, failed = time_it(x, y, pogo_bail, iterations)
+    print "bail pogo: %s, %s, %s, %s, %s" % (avg, min, max, failed, steps)
+    steps, avg, min, max, failed = time_it(x, y, jittery_steep, iterations, 3)
+    print "steep   3: %s, %s, %s, %s, %s" % (avg, min, max, failed, steps)
+    steps, avg, min, max, failed = time_it(x, y, steep_bail, iterations, 3)
+    print "bail stp3: %s, %s, %s, %s, %s" % (avg, min, max, failed, steps)
+    #steps, avg, min, max, failed = time_it(x, y, pogo, iterations)
+    #print "Pogo     : %s, %s, %s, %s, %s" % (avg, min, max, failed, steps)
+    #compare_test_algos(x, y, iterations)
