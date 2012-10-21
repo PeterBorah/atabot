@@ -241,5 +241,6 @@ def compare_bail(x, y, iterations, timeout=1):
     print "bail stp3: %s, %s, %s, %s, %s" % (avg, min, max, failed, steps)
     
 if __name__ == '__main__':
-    compare_bail(5, 5, 1000)
+    while True:
+        compare_bail(5, 5, 100)
     

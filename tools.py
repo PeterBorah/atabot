@@ -113,5 +113,5 @@ def export(board):
             else:
                 rle += "b"
         rle += "$"
-    rle = rle[0:-1] + "!"
+    rle = rle[0:-1] + "!\n"
     return rle
