@@ -6,6 +6,32 @@ import tools
 import game
 import time_trials
 
+class Worker(QtCore.QThread):
+
+    def __init__(self, game_obj, function, *args):
+    
+        super(Worker, self).__init__()
+        
+        self.exiting = False
+        self.game_obj = game_obj
+        self.function = function
+        self.args = args
+    
+    def __del__(self):
+    
+        self.exiting = True
+        self.wait()
+        
+    def run(self):
+        while not self.exiting and self.game_obj.total_needy > 0:
+            args = self.args
+            self.function(*args)
+            
+        if self.game_obj.total_needy == 0:
+            self.emit(QtCore.SIGNAL('success'))
+        else:
+            self.emit(QtCore.SIGNAL('failure'))
+        
 class Cell(QtGui.QLabel):
     
     def __init__(self, i, j, pattern):
@@ -68,32 +94,55 @@ class centralArea(QtGui.QWidget):
     
         self.board = Board(pattern)
     
-        btn = QtGui.QPushButton("Algorithm me!", self)
+        self.run = QtGui.QPushButton("Atavise me, Atabot!", self)
+        self.cancel = QtGui.QPushButton("Cancel", self)
+        self.cancel.setEnabled(False)
     
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(self.board)
-        hbox.addWidget(btn)
-        hbox.addStretch(1)
+        hbox1 = QtGui.QHBoxLayout()
+        hbox1.addWidget(self.board)
+        hbox1.addStretch(1)
 
+        hbox2 = QtGui.QHBoxLayout()
+        hbox2.addStretch(1)
+        hbox2.addWidget(self.run)
+        hbox2.addWidget(self.cancel)
+        hbox2.addStretch(1)
+        
         vbox = QtGui.QVBoxLayout()
-        vbox.addLayout(hbox)
+        vbox.addLayout(hbox1)
+        vbox.addLayout(hbox2)
         vbox.addStretch(1)
         
-        btn.clicked.connect(self.buttonClicked)
+        self.run.clicked.connect(self.buttonClicked)
+        self.cancel.clicked.connect(self.canceled)
         
         self.setLayout(vbox)
         
     def buttonClicked(self):
-        game_obj = game.Hillclimber(self.board.pattern)
+        self.cancel.setEnabled(True)
+        self.run.setEnabled(False)
+        self.game_obj = game.Hillclimber(self.board.pattern)
         mainw.statusBar().showMessage('Working!')
-        res = time_trials.steep_bail(game_obj, 3)
-        if res != False:
-            mainw.statusBar().showMessage('Success in %s moves!' % res)
-            mainw.central = centralArea(game_obj.candidate)
-            mainw.setCentralWidget(mainw.central)
-            mainw.update()
-        else:
-            mainw.statusBar().showMessage('Timed out.')
+        self.thread = Worker(self.game_obj, self.game_obj.use_sahc, 3)
+        self.thread.start()
+        self.connect(self.thread, QtCore.SIGNAL("success"), self.success)
+        self.connect(self.thread, QtCore.SIGNAL("failure"), self.failure)
+        
+    def canceled(self):
+        self.thread.exiting = True
+        self.cancel.setEnabled(False)
+        self.run.setEnabled(True)
+    
+    def success(self):
+        mainw.statusBar().showMessage('Success!')
+        mainw.central = centralArea(self.game_obj.candidate)
+        mainw.setCentralWidget(mainw.central)
+        self.cancel.setEnabled(False)
+        self.run.setEnabled(True)
+        mainw.update()
+        
+    def failure(self):
+        mainw.statusBar().showMessage('Failure :(')
         
        
 class MainW(QtGui.QMainWindow):
