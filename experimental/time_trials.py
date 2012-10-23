@@ -1,6 +1,7 @@
 import datetime
 from sys import argv
 import random
+from math import sqrt
 
 import game
 import tools
@@ -47,7 +48,7 @@ def time_it(x, y, algorithm, iterations, a = None, b = None):
             total_steps += res
         else: 
             failed += 1
-    return total_steps/(iterations - failed), total_time/(iterations - failed), min_time, max_time, failed
+    return total_steps/iterations, total_time/iterations, min_time, max_time, failed
     
 def jittery_simple(game_obj):
     while game_obj.total_needy > 0:
@@ -66,18 +67,15 @@ def jittery_steep(game_obj, n, timeout=1):
     
 def steep_bail(game_obj, n, timeout=1):
     start = datetime.datetime.now()
-    step_start = start
     i = 0
     while game_obj.total_needy > 0:
         i += 1
         time = datetime.datetime.now() - start
         if time > datetime.timedelta(minutes = timeout):
             return False
-        step_time = datetime.datetime.now() - step_start
-        if step_time > datetime.timedelta(seconds = 10):
+        if i % 10000 == 0:
             board = game_obj.board
             game_obj = game.Hillclimber(board, random=True)
-            step_start = datetime.datetime.now()
         game_obj.use_sahc(n)
     return i
     
@@ -95,7 +93,6 @@ def test_algo(game_obj, n, timeout = 1):
 def pogo(game_obj, timeout = 1):
     start = datetime.datetime.now()
     i = 0
-    step_start = start
     while game_obj.total_needy > 0:
         i += 1
         time = datetime.datetime.now() - start
@@ -107,34 +104,28 @@ def pogo(game_obj, timeout = 1):
 def pogo_bail(game_obj, timeout = 1):
     start = datetime.datetime.now()
     i = 0
-    step_start = start
     while game_obj.total_needy > 0:
         i += 1
         time = datetime.datetime.now() - start
         if time > datetime.timedelta(minutes = timeout):
             return False
-        step_time = datetime.datetime.now() - step_start
-        if step_time > datetime.timedelta(seconds = 10):
+        if i % 10000 == 0:
             board = game_obj.board
             game_obj = game.Hillclimber(board, random=True)
-            step_start = datetime.datetime.now()
         game_obj.use_pogo()
     return i
     
 def breakout_bail(game_obj, timeout=1):
     start = datetime.datetime.now()
     i = 0
-    step_start = start
     while game_obj.total_needy > 0:
         i += 1
         time = datetime.datetime.now() - start
         if time > datetime.timedelta(minutes = timeout):
             return False
-        step_time = datetime.datetime.now() - step_start
-        if step_time > datetime.timedelta(seconds = 10):
+        if i % 10000 == 0:
             board = game_obj.board
             game_obj = game.Breakout(board, random=True)
-            step_start = datetime.datetime.now()
         game_obj.use_breakout()
     return i
     
@@ -241,6 +232,8 @@ def compare_bail(x, y, iterations, timeout=1):
     print "bail stp3: %s, %s, %s, %s, %s" % (avg, min, max, failed, steps)
     
 if __name__ == '__main__':
+    i = 6
     while True:
-        compare_bail(5, 5, 100)
+        compare_bail(i, i, 1, 30)
+        i += 1
     

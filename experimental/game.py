@@ -1,5 +1,4 @@
 import random
-
 import tools
 
 class Game(object):

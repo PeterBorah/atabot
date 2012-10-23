@@ -3,17 +3,16 @@ import random
 from PyQt4 import QtGui, QtCore
 
 import tools
-import game
-import time_trials
+from search import Search
 
 class Worker(QtCore.QThread):
 
-    def __init__(self, game_obj, function, *args):
+    def __init__(self, search, function, *args):
     
         super(Worker, self).__init__()
         
         self.exiting = False
-        self.game_obj = game_obj
+        self.search = search
         self.function = function
         self.args = args
     
@@ -23,11 +22,11 @@ class Worker(QtCore.QThread):
         self.wait()
         
     def run(self):
-        while not self.exiting and self.game_obj.total_needy > 0:
+        while not self.exiting and self.search.total_needy > 0:
             args = self.args
             self.function(*args)
             
-        if self.game_obj.total_needy == 0:
+        if self.search.total_needy == 0:
             self.emit(QtCore.SIGNAL('success'))
         else:
             self.emit(QtCore.SIGNAL('failure'))
@@ -121,9 +120,9 @@ class centralArea(QtGui.QWidget):
     def buttonClicked(self):
         self.cancel.setEnabled(True)
         self.run.setEnabled(False)
-        self.game_obj = game.Hillclimber(self.board.pattern)
+        self.search = Search(self.board.pattern)
         mainw.statusBar().showMessage('Working!')
-        self.thread = Worker(self.game_obj, self.game_obj.use_sahc, 3)
+        self.thread = Worker(self.search, self.search.use_jittery, 3)
         self.thread.start()
         self.connect(self.thread, QtCore.SIGNAL("success"), self.success)
         self.connect(self.thread, QtCore.SIGNAL("failure"), self.failure)
@@ -135,7 +134,7 @@ class centralArea(QtGui.QWidget):
     
     def success(self):
         mainw.statusBar().showMessage('Success!')
-        mainw.central = centralArea(self.game_obj.candidate)
+        mainw.central = centralArea(self.search.candidate)
         mainw.setCentralWidget(mainw.central)
         self.cancel.setEnabled(False)
         self.run.setEnabled(True)
