@@ -27,10 +27,7 @@ class Worker(QtCore.QThread):
             self.function(*args)
             
         if self.search.total_needy == 0:
-<<<<<<< HEAD
-            self.cleanup()
-=======
->>>>>>> 82be312630311fcf4cb94d5f1420fd678b3da5e9
+
             self.emit(QtCore.SIGNAL('success'))
         else:
             self.emit(QtCore.SIGNAL('failure'))
@@ -92,6 +89,7 @@ class centralArea(QtGui.QWidget):
         super(centralArea, self).__init__()
         
         self.initUI(pattern)
+        self.border = 1
         
     def initUI(self, pattern):
     
@@ -135,6 +133,7 @@ class centralArea(QtGui.QWidget):
         self.thread.exiting = True
         self.cancel.setEnabled(False)
         self.run.setEnabled(True)
+        mainw.statusBar().showMessage('')
     
     def success(self):
         mainw.statusBar().showMessage('Success!')
@@ -182,18 +181,18 @@ class MainW(QtGui.QMainWindow):
     def open_rle(self):
 
         fname = QtGui.QFileDialog.getOpenFileName(self, 'Open file', 
-                '/home', "GoL Patterns (*.rle)")
+                '*.rle', "GoL Patterns (*.rle)")
         
         if fname:
         
-            pattern = tools.open_rle(fname)
+            pattern = tools.open_rle(fname, self.central.border)
             self.central = centralArea(pattern)
             self.setCentralWidget(self.central)
             self.update()
         
     def save_rle(self):
         fname = QtGui.QFileDialog.getSaveFileName(self, 'Save file', 
-                '/home', "GoL Patterns (*.rle)")
+                '*.rle', "GoL Patterns (*.rle)")
         
         if fname:
             f = open(fname, 'w')

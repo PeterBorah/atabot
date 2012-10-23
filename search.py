@@ -43,17 +43,17 @@ class Search(object):
         x = cell[0]
         y = cell[1]
         result = []
-        if x == 0:
-            x_range = [0, 1]
-        elif x == self.board["x_size"] - 1:
-            x_range = [self.board["x_size"] - 2, self.board["x_size"] - 1]
+        if x == -1:
+            x_range = [-1, 0]
+        elif x == self.board["x_size"]:
+            x_range = [self.board["x_size"] - 1, self.board["x_size"]]
         else:
             x_range = [x - 1, x, x+1]
             
-        if y == 0:
-            y_range = [0, 1]
-        elif y == self.board["y_size"] - 1:
-            y_range = [self.board["y_size"] - 2, self.board["y_size"] - 1]
+        if y == -1:
+            y_range = [-1, 0]
+        elif y == self.board["y_size"]:
+            y_range = [self.board["y_size"] - 1, self.board["y_size"]]
         else:
             y_range = [y - 1, y, y + 1]
             
@@ -80,7 +80,7 @@ class Search(object):
         big = set(big)
         return big
         
-    def get_neediness(self, cell, flipped=False):
+    def get_neediness(self, cell, flipped=None):
         '''Return the distance the target cell is from the desired state
         
         This is defined as the number of neighbors in the candidate that will need 
@@ -152,9 +152,9 @@ class Search(object):
         x = self.board["x_size"]
         y = self.board["y_size"] 
         total_needy = 0
-        for j in range(y):
+        for j in range(-1, y + 1):
             needy[j] = {}
-            for i in range(x):
+            for i in range(-1, x + 1):
                 score = self.get_neediness((i,j))
                 needy[j][i] = score
                 total_needy += score
@@ -165,9 +165,9 @@ class Search(object):
         impact = {}
         x = self.board["x_size"]
         y = self.board["y_size"] 
-        for j in range(y):
+        for j in range(-1, y + 1):
             impact[j] = {}
-            for i in range(x):
+            for i in range(-1, x + 1):
                 impact[j][i] = self.get_impact((i,j))
         return impact
         
@@ -264,25 +264,4 @@ class Search(object):
         else:        
             flip_cell = random.choice(best_list)
             self.flip(flip_cell)
-        
-<<<<<<< HEAD
-    def clean_up(self):
-        '''Goes through self.candidate and turns off all cells that don't need to be on
-        
-        The rationale is that simplicity is preferable. I'd rather see the exact cells
-        that need to be on, rather than those cells plus a random loner or two that do
-        nothing.
-        
-        Since changing a cell could plausibly change the results, it starts over after
-        every cell cleaned up. (I think this is necessary, but I should really check...)
-        
-        '''
-        
-        for j in range(self.board["y_size"]):
-            for i in range(self.board["x_size"]):
-                if self.board[j][i] == True and self.impact == 0:
-                    self.flip((i, j))
-                    return self.clean_up()
-=======
->>>>>>> 82be312630311fcf4cb94d5f1420fd678b3da5e9
-    
+            
