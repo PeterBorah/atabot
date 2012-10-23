@@ -265,6 +265,7 @@ class Search(object):
             flip_cell = random.choice(best_list)
             self.flip(flip_cell)
         
+<<<<<<< HEAD
     def clean_up(self):
         '''Goes through self.candidate and turns off all cells that don't need to be on
         
@@ -282,4 +283,6 @@ class Search(object):
                 if self.board[j][i] == True and self.impact == 0:
                     self.flip((i, j))
                     return self.clean_up()
+=======
+>>>>>>> 82be312630311fcf4cb94d5f1420fd678b3da5e9
     

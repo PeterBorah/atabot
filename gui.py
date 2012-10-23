@@ -27,7 +27,10 @@ class Worker(QtCore.QThread):
             self.function(*args)
             
         if self.search.total_needy == 0:
+<<<<<<< HEAD
             self.cleanup()
+=======
+>>>>>>> 82be312630311fcf4cb94d5f1420fd678b3da5e9
             self.emit(QtCore.SIGNAL('success'))
         else:
             self.emit(QtCore.SIGNAL('failure'))
