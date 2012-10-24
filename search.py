@@ -265,3 +265,9 @@ class Search(object):
             flip_cell = random.choice(best_list)
             self.flip(flip_cell)
             
+            
+    def cleanup(self):
+        for j in range(self.board["y_size"]):
+            for i in range(self.board["x_size"]):
+                if self.candidate[j][i] == True and self.impact[j][i] == 0:
+                    self.flip((i,j))

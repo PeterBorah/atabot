@@ -62,26 +62,26 @@ def interpret_rle(rle, board):
     return board
 
 def open_rle(file, border):
-    f = open(file)
-    rle = ""
+    with open(file) as f:
+        rle = ""
 
-    for line in f:
-        if line[0] == 'x':
-            x_begin = re.search('x\s*=\s*', line)
-            x_end = line.find("," , x_begin.end())
-            x_size = int(line[x_begin.end():x_end])
-            y_begin = re.search('y\s*=\s*', line)
-            y_end = line.find("," , y_begin.end())
-            y_size = int(line[y_begin.end():y_end])
+        for line in f:
+            if line[0] == 'x':
+                x_begin = re.search('x\s*=\s*', line)
+                x_end = line.find("," , x_begin.end())
+                x_size = int(line[x_begin.end():x_end])
+                y_begin = re.search('y\s*=\s*', line)
+                y_end = line.find("," , y_begin.end())
+                y_size = int(line[y_begin.end():y_end])
 
-        elif line[0] == '#':
-            pass
+            elif line[0] == '#':
+                pass
+            
+            else:
+                rle += line[:-1]
         
-        else:
-            rle += line[:-1]
-    
-    board = create_blank(x_size + 2*border, y_size + 2*border)
-    board["border"] = border
+        board = create_blank(x_size + 2*border, y_size + 2*border)
+        board["border"] = border
     return interpret_rle(rle, board)
                     
         

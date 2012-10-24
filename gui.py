@@ -27,7 +27,7 @@ class Worker(QtCore.QThread):
             self.function(*args)
             
         if self.search.total_needy == 0:
-
+            self.search.cleanup()
             self.emit(QtCore.SIGNAL('success'))
         else:
             self.emit(QtCore.SIGNAL('failure'))
@@ -52,12 +52,13 @@ class Cell(QtGui.QLabel):
         self.setStyleSheet("border: 1px solid black;")
         
     def mousePressEvent(self, click):
-        if self.pattern[self.j][self.i]:
-            self.setPixmap(QtGui.QPixmap('0.png'))
-            self.pattern[self.j][self.i] = False
-        else:
-            self.setPixmap(QtGui.QPixmap('1.png'))
-            self.pattern[self.j][self.i] = True
+        if mainw.central.run.isEnabled():
+            if self.pattern[self.j][self.i]:
+                self.setPixmap(QtGui.QPixmap('0.png'))
+                self.pattern[self.j][self.i] = False
+            else:
+                self.setPixmap(QtGui.QPixmap('1.png'))
+                self.pattern[self.j][self.i] = True
 
 class Board(QtGui.QWidget):
     
@@ -70,7 +71,7 @@ class Board(QtGui.QWidget):
     def initUI(self):
     
         if not self.pattern:
-            self.pattern = tools.create_blank(5, 5)
+            self.pattern = tools.create_blank(7, 7)
         
         self.grid = QtGui.QGridLayout()
         self.grid.setSpacing(1)
@@ -90,49 +91,78 @@ class centralArea(QtGui.QWidget):
         
         self.initUI(pattern)
         self.border = 1
+        self.algorithm = "Jittery Hillclimbing Algorithm"
         
     def initUI(self, pattern):
     
         self.board = Board(pattern)
     
-        self.run = QtGui.QPushButton("Atavise me, Atabot!", self)
+        self.clear = QtGui.QPushButton("Clear", self)
+        self.run = QtGui.QPushButton("Atavise me!", self)
         self.cancel = QtGui.QPushButton("Cancel", self)
         self.cancel.setEnabled(False)
+        
+        self.algo_chooser = QtGui.QComboBox(self)
+        self.algo_chooser.addItem("Jittery Hillclimbing Algorithm")
+        self.algo_chooser.addItem("Pogo Algorithm")
     
         hbox1 = QtGui.QHBoxLayout()
         hbox1.addWidget(self.board)
         hbox1.addStretch(1)
-
+        
         hbox2 = QtGui.QHBoxLayout()
         hbox2.addStretch(1)
-        hbox2.addWidget(self.run)
-        hbox2.addWidget(self.cancel)
+        hbox2.addWidget(self.clear)
+        hbox2.addWidget(self.algo_chooser)
         hbox2.addStretch(1)
+
+        hbox3 = QtGui.QHBoxLayout()
+        hbox3.addStretch(1)
+        hbox3.addWidget(self.run)
+        hbox3.addWidget(self.cancel)
+        hbox3.addStretch(1)
         
         vbox = QtGui.QVBoxLayout()
         vbox.addLayout(hbox1)
         vbox.addLayout(hbox2)
+        vbox.addLayout(hbox3)
         vbox.addStretch(1)
         
-        self.run.clicked.connect(self.buttonClicked)
+        self.clear.clicked.connect(self.cleared)
+        self.run.clicked.connect(self.run_algo)
         self.cancel.clicked.connect(self.canceled)
+        self.algo_chooser.activated[str].connect(self.chosen)
         
         self.setLayout(vbox)
         
-    def buttonClicked(self):
+    def run_algo(self):
         self.cancel.setEnabled(True)
         self.run.setEnabled(False)
+        self.clear.setEnabled(False)
         self.search = Search(self.board.pattern)
         mainw.statusBar().showMessage('Working!')
-        self.thread = Worker(self.search, self.search.use_jittery, 3)
+        if self.algorithm == "Pogo Algorithm":
+            self.thread = Worker(self.search, self.search.use_pogo)
+        else:
+            self.thread = Worker(self.search, self.search.use_jittery)
         self.thread.start()
         self.connect(self.thread, QtCore.SIGNAL("success"), self.success)
         self.connect(self.thread, QtCore.SIGNAL("failure"), self.failure)
+        
+    def chosen(self, algorithm):
+        self.algorithm = algorithm
+        
+    def cleared(self):
+        new = tools.create_blank(self.board.pattern["x_size"], self.board.pattern["y_size"])
+        mainw.central = centralArea(new)
+        mainw.setCentralWidget(mainw.central)
+        mainw.update()
         
     def canceled(self):
         self.thread.exiting = True
         self.cancel.setEnabled(False)
         self.run.setEnabled(True)
+        self.clear.setEnabled(True)
         mainw.statusBar().showMessage('')
     
     def success(self):
